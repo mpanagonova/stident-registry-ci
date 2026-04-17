@@ -29,7 +29,8 @@ pipeline {
                 source $NVM_DIR/nvm.sh
                 nvm use 24
 
-                npm start > app.log 2>&1 &
+                nohup npm start > app.log 2>&1 &
+                echo $! > app.pid
                 '''
             }
         }
@@ -41,7 +42,7 @@ pipeline {
                 source $NVM_DIR/nvm.sh
                 nvm use 24
 
-                npx --yes wait-on http://127.0.0.1:8080
+                npx --yes wait-on http://localhost:8080 --timeout 30000
                 '''
             }
         }
@@ -62,11 +63,9 @@ pipeline {
     post {
         always {
             sh '''
-            export NVM_DIR="$HOME/.nvm"
-            source $NVM_DIR/nvm.sh
-            nvm use 24
-
-            npx --yes kill-port 8080 || true
+            if [ -f app.pid ]; then
+              kill $(cat app.pid) || true
+            fi
             '''
         }
     }
